@@ -11,11 +11,13 @@ import {
   Link,
   Divider,
   useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
   const theme = useTheme();
+  const isXs = useMediaQuery(theme.breakpoints.down('sm'));
   const { login } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -44,18 +46,30 @@ const Login = () => {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ height: '100vh', display: 'flex', alignItems: 'center' }}>
+    <Container 
+      maxWidth="sm" 
+      sx={{ 
+        height: '100vh', 
+        display: 'flex', 
+        alignItems: 'center',
+        px: isXs ? 2 : 3,
+      }}
+    >
       <Paper
         elevation={3}
         sx={{
-          p: 4,
+          p: isXs ? 3 : 4,
           width: '100%',
-          borderRadius: 2,
         }}
       >
-        <Box sx={{ textAlign: 'center', mb: 4 }}>
-          <Typography variant="h4" component="h1" fontWeight={700} color="primary">
-            DataIdea BRICS
+        <Box sx={{ textAlign: 'center', mb: 3 }}>
+          <Typography 
+            variant={isXs ? "h5" : "h4"} 
+            component="h1" 
+            fontWeight={700} 
+            color="primary"
+          >
+            DATAIDEA BRICS
           </Typography>
           <Typography variant="subtitle1" color="text.secondary">
             LLM Analytics Platform
@@ -81,6 +95,7 @@ const Login = () => {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             disabled={loading}
+            size={isXs ? "small" : "medium"}
           />
           <TextField
             margin="normal"
@@ -94,12 +109,13 @@ const Login = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             disabled={loading}
+            size={isXs ? "small" : "medium"}
           />
           <Button
             type="submit"
             fullWidth
             variant="contained"
-            sx={{ mt: 3, mb: 2, py: 1.5, borderRadius: 2 }}
+            sx={{ mt: 3, mb: 2, py: isXs ? 1 : 1.5 }}
             disabled={loading}
           >
             {loading ? <CircularProgress size={24} /> : 'Sign In'}
@@ -125,7 +141,6 @@ const Login = () => {
               sx={{
                 p: 2,
                 backgroundColor: theme.palette.grey[50],
-                borderRadius: 1,
                 border: `1px solid ${theme.palette.grey[200]}`,
               }}
             >

@@ -16,6 +16,9 @@ import {
   TextField,
   InputAdornment,
   IconButton,
+  useTheme,
+  useMediaQuery,
+  Card,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
@@ -25,6 +28,10 @@ import { analyticsService } from '../services/api';
 import { Prompt } from '../types';
 
 const PromptsPage = () => {
+  const theme = useTheme();
+  const isXs = useMediaQuery(theme.breakpoints.down('sm'));
+  const isSm = useMediaQuery(theme.breakpoints.between('sm', 'md'));
+  
   const { logout } = useAuth();
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [loading, setLoading] = useState(false);
@@ -40,7 +47,7 @@ const PromptsPage = () => {
       setError(null);
       try {
         // In development, we'll use mock data
-        if (process.env.NODE_ENV === 'development') {
+        if (import.meta.env.MODE === 'development') {
           setTimeout(() => {
             const mockPrompts: Prompt[] = Array.from({ length: 50 }, (_, i) => ({
               id: i + 1,
@@ -133,10 +140,58 @@ const PromptsPage = () => {
     }
   };
 
+  // Responsive column display
+  const getVisibleColumns = () => {
+    if (isXs) {
+      return ['Model', 'Prompt', 'Timestamp'];
+    } else if (isSm) {
+      return ['ID', 'Model', 'Prompt', 'Tokens', 'Timestamp'];
+    }
+    return ['ID', 'Model', 'Prompt', 'Response', 'Tokens', 'Latency', 'Timestamp'];
+  };
+
+  const visibleColumns = getVisibleColumns();
+
+  // Mobile card view for XS screens
+  const renderMobileCard = (prompt: Prompt) => (
+    <Card key={prompt.id} sx={{ mb: 2, p: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+        <Chip
+          label={prompt.modelId}
+          size="small"
+          sx={{
+            backgroundColor: getModelColor(prompt.modelId),
+            color: 'white',
+            fontWeight: 500,
+          }}
+        />
+        <Typography variant="caption" color="text.secondary">
+          {formatDate(prompt.timestamp)}
+        </Typography>
+      </Box>
+      <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+        {truncateText(prompt.promptText, 100)}
+      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
+        <Typography variant="caption" color="text.secondary">
+          ID: {prompt.id}
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          {prompt.promptTokens + prompt.responseTokens} tokens
+        </Typography>
+      </Box>
+    </Card>
+  );
+
   return (
     <DashboardLayout onLogout={logout}>
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom fontWeight={600}>
+      <Box sx={{ mb: isXs ? 2 : 4 }}>
+        <Typography 
+          variant={isXs ? "h5" : "h4"} 
+          component="h1" 
+          gutterBottom 
+          fontWeight={600}
+        >
           Prompts
         </Typography>
         <Typography variant="body1" color="text.secondary">
@@ -144,12 +199,12 @@ const PromptsPage = () => {
         </Typography>
       </Box>
 
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+      <Paper sx={{ p: isXs ? 2 : 3, mb: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: isXs ? 1 : 2 }}>
           <TextField
             placeholder="Search prompts..."
             variant="outlined"
-            size="small"
+            size={isXs ? "small" : "medium"}
             fullWidth
             value={searchQuery}
             onChange={handleSearchChange}
@@ -180,55 +235,86 @@ const PromptsPage = () => {
         </Box>
       ) : (
         <>
-          <TableContainer component={Paper}>
-            <Table sx={{ minWidth: 650 }}>
-              <TableHead>
-                <TableRow>
-                  <TableCell>ID</TableCell>
-                  <TableCell>Model</TableCell>
-                  <TableCell>Prompt</TableCell>
-                  <TableCell>Response</TableCell>
-                  <TableCell>Tokens</TableCell>
-                  <TableCell>Latency (ms)</TableCell>
-                  <TableCell>Timestamp</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {prompts.map((prompt) => (
-                  <TableRow key={prompt.id} hover>
-                    <TableCell>{prompt.id}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={prompt.modelId}
-                        size="small"
-                        sx={{
-                          backgroundColor: getModelColor(prompt.modelId),
-                          color: 'white',
-                          fontWeight: 500,
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell>{truncateText(prompt.promptText)}</TableCell>
-                    <TableCell>{truncateText(prompt.responseText)}</TableCell>
-                    <TableCell>
-                      {prompt.promptTokens} / {prompt.responseTokens}
-                    </TableCell>
-                    <TableCell>{prompt.latency}</TableCell>
-                    <TableCell>{formatDate(prompt.timestamp)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-          <TablePagination
-            rowsPerPageOptions={[5, 10, 25, 50]}
-            component="div"
-            count={totalPrompts}
-            rowsPerPage={rowsPerPage}
-            page={page}
-            onPageChange={handleChangePage}
-            onRowsPerPageChange={handleChangeRowsPerPage}
-          />
+          {isXs ? (
+            // Mobile card view
+            <Box>
+              {prompts.map(renderMobileCard)}
+              <TablePagination
+                rowsPerPageOptions={[5, 10, 25]}
+                component="div"
+                count={totalPrompts}
+                rowsPerPage={rowsPerPage}
+                page={page}
+                onPageChange={handleChangePage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+              />
+            </Box>
+          ) : (
+            // Table view for larger screens
+            <>
+              <TableContainer component={Paper}>
+                <Table sx={{ minWidth: isSm ? 650 : 900 }}>
+                  <TableHead>
+                    <TableRow>
+                      {visibleColumns.includes('ID') && <TableCell>ID</TableCell>}
+                      {visibleColumns.includes('Model') && <TableCell>Model</TableCell>}
+                      {visibleColumns.includes('Prompt') && <TableCell>Prompt</TableCell>}
+                      {visibleColumns.includes('Response') && <TableCell>Response</TableCell>}
+                      {visibleColumns.includes('Tokens') && <TableCell>Tokens</TableCell>}
+                      {visibleColumns.includes('Latency') && <TableCell>Latency (ms)</TableCell>}
+                      {visibleColumns.includes('Timestamp') && <TableCell>Timestamp</TableCell>}
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {prompts.map((prompt) => (
+                      <TableRow key={prompt.id} hover>
+                        {visibleColumns.includes('ID') && <TableCell>{prompt.id}</TableCell>}
+                        {visibleColumns.includes('Model') && (
+                          <TableCell>
+                            <Chip
+                              label={prompt.modelId}
+                              size="small"
+                              sx={{
+                                backgroundColor: getModelColor(prompt.modelId),
+                                color: 'white',
+                                fontWeight: 500,
+                              }}
+                            />
+                          </TableCell>
+                        )}
+                        {visibleColumns.includes('Prompt') && (
+                          <TableCell>{truncateText(prompt.promptText)}</TableCell>
+                        )}
+                        {visibleColumns.includes('Response') && (
+                          <TableCell>{truncateText(prompt.responseText)}</TableCell>
+                        )}
+                        {visibleColumns.includes('Tokens') && (
+                          <TableCell>
+                            {prompt.promptTokens} / {prompt.responseTokens}
+                          </TableCell>
+                        )}
+                        {visibleColumns.includes('Latency') && (
+                          <TableCell>{prompt.latency}</TableCell>
+                        )}
+                        {visibleColumns.includes('Timestamp') && (
+                          <TableCell>{formatDate(prompt.timestamp)}</TableCell>
+                        )}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+              <TablePagination
+                rowsPerPageOptions={[5, 10, 25, 50]}
+                component="div"
+                count={totalPrompts}
+                rowsPerPage={rowsPerPage}
+                page={page}
+                onPageChange={handleChangePage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+              />
+            </>
+          )}
         </>
       )}
     </DashboardLayout>

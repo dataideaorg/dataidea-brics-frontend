@@ -8,15 +8,20 @@ import {
   Box,
   Menu,
   MenuItem,
-  Button,
   Avatar,
   Tooltip,
   useTheme,
+  Badge,
+  useMediaQuery,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import SettingsIcon from '@mui/icons-material/Settings';
+import LogoutIcon from '@mui/icons-material/Logout';
+import PersonIcon from '@mui/icons-material/Person';
+import { useAuth } from '../../context/AuthContext';
 
 interface NavbarProps {
   toggleSidebar: () => void;
@@ -25,6 +30,9 @@ interface NavbarProps {
 
 const Navbar = ({ toggleSidebar, onLogout }: NavbarProps) => {
   const theme = useTheme();
+  const isXs = useMediaQuery(theme.breakpoints.down('sm'));
+  const { user } = useAuth();
+  
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [notificationAnchorEl, setNotificationAnchorEl] = useState<null | HTMLElement>(null);
 
@@ -56,7 +64,7 @@ const Navbar = ({ toggleSidebar, onLogout }: NavbarProps) => {
         zIndex: theme.zIndex.drawer + 1,
         backgroundColor: 'white',
         color: 'text.primary',
-        boxShadow: '0 2px 10px rgba(0, 0, 0, 0.05)'
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
       }}
     >
       <Toolbar>
@@ -71,7 +79,7 @@ const Navbar = ({ toggleSidebar, onLogout }: NavbarProps) => {
         </IconButton>
         
         <Typography
-          variant="h6"
+          variant={isXs ? "body1" : "h6"}
           component={Link}
           to="/"
           sx={{
@@ -82,30 +90,41 @@ const Navbar = ({ toggleSidebar, onLogout }: NavbarProps) => {
             alignItems: 'center',
           }}
         >
-          <Box 
-            component="img" 
-            src="/logo.svg" 
-            alt="DataIdea BRICS Logo" 
-            sx={{ height: 32, mr: 1, display: { xs: 'none', sm: 'block' } }}
-          />
-          DataIdea BRICS
+          {!isXs && (
+            <Box 
+              component="span" 
+              sx={{ 
+                color: theme.palette.primary.main,
+                mr: 0.5
+              }}
+            >
+              DataIdea
+            </Box>
+          )}
+          BRICS
         </Typography>
 
         <Box sx={{ flexGrow: 1 }} />
 
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <Tooltip title="Help">
-            <IconButton color="inherit">
-              <HelpOutlineIcon />
-            </IconButton>
-          </Tooltip>
+          {!isXs && (
+            <Tooltip title="Help">
+              <IconButton color="inherit" size={isXs ? "small" : "medium"}>
+                <HelpOutlineIcon />
+              </IconButton>
+            </Tooltip>
+          )}
           
           <Tooltip title="Notifications">
             <IconButton
               color="inherit"
               onClick={handleNotificationMenu}
+              size={isXs ? "small" : "medium"}
+              sx={{ mx: isXs ? 0.5 : 1 }}
             >
-              <NotificationsIcon />
+              <Badge badgeContent={3} color="error">
+                <NotificationsIcon />
+              </Badge>
             </IconButton>
           </Tooltip>
           <Menu
@@ -123,16 +142,26 @@ const Navbar = ({ toggleSidebar, onLogout }: NavbarProps) => {
             open={Boolean(notificationAnchorEl)}
             onClose={handleNotificationClose}
           >
-            <MenuItem onClick={handleNotificationClose}>No new notifications</MenuItem>
+            <MenuItem onClick={handleNotificationClose}>New model available: GPT-4o</MenuItem>
+            <MenuItem onClick={handleNotificationClose}>Usage limit reached for Project A</MenuItem>
+            <MenuItem onClick={handleNotificationClose}>Weekly report is ready</MenuItem>
           </Menu>
           
           <Tooltip title="Account">
             <IconButton
               onClick={handleMenu}
               color="inherit"
+              size={isXs ? "small" : "medium"}
             >
-              <Avatar sx={{ width: 32, height: 32, bgcolor: theme.palette.primary.main }}>
-                <AccountCircleIcon />
+              <Avatar 
+                sx={{ 
+                  width: isXs ? 28 : 32, 
+                  height: isXs ? 28 : 32, 
+                  bgcolor: theme.palette.primary.main,
+                  fontSize: isXs ? '0.8rem' : '1rem'
+                }}
+              >
+                {user?.username ? user.username.charAt(0).toUpperCase() : <AccountCircleIcon />}
               </Avatar>
             </IconButton>
           </Tooltip>
@@ -151,9 +180,18 @@ const Navbar = ({ toggleSidebar, onLogout }: NavbarProps) => {
             open={Boolean(anchorEl)}
             onClose={handleClose}
           >
-            <MenuItem component={Link} to="/profile" onClick={handleClose}>Profile</MenuItem>
-            <MenuItem component={Link} to="/settings" onClick={handleClose}>Settings</MenuItem>
-            <MenuItem onClick={handleLogout}>Logout</MenuItem>
+            <MenuItem component={Link} to="/profile" onClick={handleClose}>
+              <PersonIcon fontSize="small" sx={{ mr: 1 }} />
+              Profile
+            </MenuItem>
+            <MenuItem component={Link} to="/settings" onClick={handleClose}>
+              <SettingsIcon fontSize="small" sx={{ mr: 1 }} />
+              Settings
+            </MenuItem>
+            <MenuItem onClick={handleLogout}>
+              <LogoutIcon fontSize="small" sx={{ mr: 1 }} />
+              Logout
+            </MenuItem>
           </Menu>
         </Box>
       </Toolbar>

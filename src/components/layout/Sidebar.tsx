@@ -99,7 +99,7 @@ const Sidebar = ({ open, onClose }: SidebarProps) => {
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Box sx={{ p: 2, display: 'flex', alignItems: 'center' }}>
         <Typography variant="h6" fontWeight={700} color="primary">
-          DataIdea BRICS
+          DATAIDEA BRICS
         </Typography>
       </Box>
       <Divider />
